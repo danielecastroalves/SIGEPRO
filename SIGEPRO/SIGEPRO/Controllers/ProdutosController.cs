@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using SIGEPRO.Context;
 using SIGEPRO.Models;
+using SIGEPRO.Services;
 
 namespace SIGEPRO.Controllers
 {
@@ -14,51 +14,128 @@ namespace SIGEPRO.Controllers
     [Route("[controller]")]
     public class ProdutosController : ControllerBase
     {
-        private readonly ApiContext _context;
+        private readonly IProdutoService _produto;
 
-        public ProdutosController(ApiContext context)
+        public ProdutosController(IProdutoService produto)
         {
-            _context = context;
+            _produto = produto;
         }
 
-        //GET: /Produto
+        /// <summary>
+        /// Retorna todos os produtos cadastrados
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">Dados encontrados.</response>
+        /// <response code="404">Dados não encontrados.</response>
+        /// <response code="500">Serviço indisponível.</response>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Produto>>> RecuperaProdutos()
         {
-            return NoContent();
+            var result = await _produto.RecuperaProdutos();
+
+            if (result == null || !result.Any())
+                return NotFound();
+
+            return Ok(result);
         }
 
-        //GET: /Produto/5
+        /// <summary>
+        /// Retorna o produto correspondente ao ID fornecido
+        /// </summary>
+        /// <param name="idProduto"></param>
+        /// <returns></returns>
+        /// <response code="200">Dados encontrados.</response>
+        /// <response code="400">Dados de entrada incorretos.</response>
+        /// <response code="404">Dados não encontrados.</response>
+        /// <response code="500">Serviço indisponível.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Produto>> RecuperaProdutosPorId(int idProduto)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<Produto>> RecuperaProdutoPorId(int idProduto)
         {
-            return NoContent();
+            var result = await _produto.RecuperaProdutoPorId(idProduto);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
         }
 
-        //PUT: /Produto/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> AlteraProduto(int id, [FromForm] Produto produto)
-        {
-            return NoContent();
-        }
-
-        // POST: /Produto        
-        [HttpPost]
+        /// <summary>
+        /// Cadastra um novo Produto
+        /// </summary>        
+        /// <param name="produto"></param>
+        /// <returns></returns>
+        /// <response code="200">Dados cadastrados.</response>
+        /// <response code="400">Dados de entrada incorretos.</response>        
+        /// <response code="500">Serviço indisponível.</response>
+        [HttpPost("CadastraProduto")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Produto>> CadastraProduto([FromForm] Produto produto)
         {
+            var result = await _produto.CadastraProduto(produto);
+
+            if (result == null)
+                return NotFound();
+
+            return CreatedAtAction("RecuperaProdutoPorId", new { id = produto.CodigoProduto }, produto);
+        }
+
+        /// <summary>
+        /// Atualiza as informações do Produto
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="produto"></param>
+        /// <returns></returns>
+        /// <response code="200">Dados Atualizados.</response>
+        /// <response code="400">Dados de entrada incorretos.</response>
+        /// <response code="404">Dados não encontrados.</response>
+        /// <response code="500">Serviço indisponível.</response>
+        [HttpPut("AlteraProduto/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> AlteraProduto(int id, [FromForm] Produto produto)
+        {
+            var result = await _produto.AlteraProduto(id, produto);
+
+            if (!result)
+                return BadRequest();
+
             return NoContent();
         }
 
-        //PUT: /Produto/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> InativaProduto(int id, [FromForm] Produto produto)
+        /// <summary>
+        /// Inativa o Produto
+        /// </summary>
+        /// <param name="id"></param>        
+        /// <returns></returns>
+        /// <response code="200">Dados Atualizados.</response>
+        /// <response code="400">Dados de entrada incorretos.</response>
+        /// <response code="404">Dados não encontrados.</response>
+        /// <response code="500">Serviço indisponível.</response>
+        [HttpPut("InativaProduto/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> InativaProduto(int id)
         {
+            var result = await _produto.InativaProduto(id);
+
+            if (!result)
+                return BadRequest();
+
             return NoContent();
         }
-       
-        private bool ProdutoExists(int id)
-        {
-          return (_context.Produto?.Any(e => e.CodigoProduto == id)).GetValueOrDefault();
-        }
+
     }
 }

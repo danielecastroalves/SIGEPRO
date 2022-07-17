@@ -17,5 +17,6 @@ namespace SIGEPRO.Context
 
         public DbSet<Produto> Produto { get; set; }
         public DbSet<Fornecedor> Fornecedor { get; set; }
+
     }
 }

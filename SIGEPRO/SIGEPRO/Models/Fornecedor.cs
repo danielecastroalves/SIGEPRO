@@ -5,11 +5,10 @@ namespace SIGEPRO.Models
 {
     [Table("FORNECEDOR")]
     public class Fornecedor
-    {
-        [Key, Column("COD_FORNECEDOR")]
+    {        
+        [Column("COD_FORNECEDOR"), Key, Required]
         public int CodigoFornecedor { get; set; }
-
-        [Column("DESC_FORNECEDOR")]
+        [Column("DESC_FORNECEDOR"), Required]
         public string DescFornecedor { get; set; }
         [Column("CNPJ_FORNECEDOR")]
         public string CnpjFornecedor { get; set; }        

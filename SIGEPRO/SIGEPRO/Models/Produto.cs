@@ -6,9 +6,9 @@ namespace SIGEPRO.Models
     [Table("PRODUTO")]
     public class Produto
     {
-        [Key, Column("COD_PRODUTO")]
+        [Column("COD_PRODUTO"), Key, Required]
         public int CodigoProduto { get; set; }
-        [Column("DESC_PRODUTO")]
+        [Column("DESC_PRODUTO"), Required]
         public string DescricaoProduto { get; set; }
         [Column("SIT_PRODUTO")]
         public string SituacaoProduto { get; set; }

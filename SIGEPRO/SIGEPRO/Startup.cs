@@ -2,30 +2,40 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 using SIGEPRO.Context;
+using SIGEPRO.Services;
+using AutoMapper;
 
 namespace SIGEPRO
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
         public IConfiguration Configuration { get; }
+
+        public Startup(IHostEnvironment env)
+        {
+            var builder = new ConfigurationBuilder()
+               .SetBasePath(env.ContentRootPath)
+               .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+               .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+               .AddEnvironmentVariables();
+
+            Configuration = builder.Build();
+        }        
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            RegisterServices(services);
+
             //Adicionando o contexto e a ConnectionString
             services.AddDbContext<ApiContext>
                 (options => options.UseSqlServer
                 (Configuration.GetConnectionString("DefaultConnection")));
-
-            services.AddControllersWithViews();
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
+                        
+            services.AddControllers();
+            services.AddSwaggerGen();            
 
         }
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -48,9 +58,22 @@ namespace SIGEPRO
             }
 
             app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.UseRouting(); 
+            app.UseRouting();
+            app.UseAuthorization();          
 
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
+        }
+
+        public void RegisterServices(IServiceCollection services)
+        {
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            //services.AddSingleton<IProdutoService, ProdutoService>();
+            //services.AddSingleton<IFornecedorService, FornecedorService>();
         }
     }
 }
