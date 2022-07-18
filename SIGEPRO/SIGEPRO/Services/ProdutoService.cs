@@ -13,8 +13,8 @@ namespace SIGEPRO.Services
     {
         Task<List<Produto>> RecuperaProdutos();
         Task<Produto> RecuperaProdutoPorId(int id);
-        Task<bool> AlteraProduto(int id, Produto Produto);
         Task<Produto> CadastraProduto(Produto produto);
+        Task<bool> AlteraProduto(Produto Produto);        
         Task<bool> InativaProduto(int id);
     }
 
@@ -29,32 +29,123 @@ namespace SIGEPRO.Services
             _logger = logger;
         }
 
-        public Task<bool> AlteraProduto(int id, Produto Produto)
+        public async Task<List<Produto>> RecuperaProdutos()
         {
-            throw new NotImplementedException();
+            try
+            {
+                
+                return await _context.Produto.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+           
         }
 
-        public Task<Produto> CadastraProduto(Produto produto)
+        public async Task<Produto> RecuperaProdutoPorId(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (ProdutoExiste(id))
+                {
+                   return await _context.Produto.FindAsync(id);                    
+                }
+                else
+                    return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
         }
 
-        public Task<bool> InativaProduto(int id)
+        public async Task<Produto> CadastraProduto(Produto produto)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (VerificaDatas(produto) && VerificaFornecedor(produto))
+                {
+                    _context.Produto.Add(produto);
+                    await _context.SaveChangesAsync();
+                    return produto;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
         }
 
-        public Task<Produto> RecuperaProdutoPorId(int id)
+        public async Task<bool> AlteraProduto(Produto produto)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (VerificaDatas(produto) && VerificaFornecedor(produto))
+                {
+                    _context.Entry(produto).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
         }
 
-        public Task<List<Produto>> RecuperaProdutos()
+        public async Task<bool> InativaProduto(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var produto = await _context.Produto.FindAsync(id);
+                if (produto != null)
+                {
+                    produto.SituacaoProduto = SITUACAO.INATIVO.ToString();
+                    _context.Entry(produto).State = EntityState.Modified;
+
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
         }
 
-        private bool ProdutoExists(int id)
+        private bool VerificaDatas(Produto produto)
+        {
+            //Verifica se a Data de Fabricação é menor do que a Data de Validade
+            var r = produto.DataFabricacao.CompareTo(produto.DataValidade) < 0;
+            return (r);
+        }
+
+        private bool VerificaFornecedor(Produto produto)
+        {
+            //Verifica se o Fornecedor existe
+            return (_context.Fornecedor?.Any(e => e.CodigoFornecedor == produto.CodigoFornecedor)).GetValueOrDefault();
+        }
+
+        private bool ProdutoExiste(int id)
         {
             return (_context.Produto?.Any(e => e.CodigoProduto == id)).GetValueOrDefault();
         }

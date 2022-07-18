@@ -26,14 +26,15 @@ namespace SIGEPRO
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {
-            RegisterServices(services);
+        {           
 
             //Adicionando o contexto e a ConnectionString
             services.AddDbContext<ApiContext>
                 (options => options.UseSqlServer
                 (Configuration.GetConnectionString("DefaultConnection")));
-                        
+
+            RegisterServices(services);
+
             services.AddControllers();
             services.AddSwaggerGen();            
 
@@ -71,9 +72,9 @@ namespace SIGEPRO
         public void RegisterServices(IServiceCollection services)
         {
 
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-            //services.AddSingleton<IProdutoService, ProdutoService>();
-            //services.AddSingleton<IFornecedorService, FornecedorService>();
+            //services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddScoped<IProdutoService, ProdutoService>();
+            services.AddScoped<IFornecedorService, FornecedorService>();
         }
     }
 }

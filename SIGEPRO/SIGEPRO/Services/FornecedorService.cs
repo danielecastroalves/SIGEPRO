@@ -1,11 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using SIGEPRO.Context;
 using SIGEPRO.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SIGEPRO.Services
 {
@@ -13,8 +9,8 @@ namespace SIGEPRO.Services
     {
         Task<List<Fornecedor>> RecuperaFornecedores();
         Task<Fornecedor> RecuperaFornecedorPorId(int id);
-        Task<bool> CadastraFornecedor(Fornecedor Fornecedor);
-        Task<bool> AlteraFornecedor(int id, Fornecedor Fornecedor);
+        Task<Fornecedor> CadastraFornecedor(Fornecedor Fornecedor);
+        Task<bool> AlteraFornecedor(Fornecedor Fornecedor);
         Task<bool> DeletaFornecedor(int id);
     }
 
@@ -28,20 +24,37 @@ namespace SIGEPRO.Services
             _context = context;
             _logger = logger;
         }
+
         public async Task<List<Fornecedor>> RecuperaFornecedores()
         {
-            return await _context.Fornecedor.ToListAsync();
+            try
+            {
+                return await _context.Fornecedor.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
         }
 
         public async Task<Fornecedor> RecuperaFornecedorPorId(int id)
         {
-            if (FornecedorExists(id))
-                return await _context.Fornecedor.FindAsync(id);
-            else
-                return null;
+            try
+            {
+                if (FornecedorExiste(id))
+                    return await _context.Fornecedor.FindAsync(id);
+                else
+                    return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }            
         }
 
-        public async Task<bool> AlteraFornecedor(int id, Fornecedor fornecedor)
+        public async Task<bool> AlteraFornecedor(Fornecedor fornecedor)
         {
             try
             {
@@ -50,30 +63,25 @@ namespace SIGEPRO.Services
 
                 return true;
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!FornecedorExists(id))
-                {
-                    return false;
-                }
-                else
-                {
-                    throw;
-                }
+                _logger.LogError(ex.Message);
+                throw;
             }
-
         }
 
-        public async Task<bool> CadastraFornecedor(Fornecedor fornecedor)
-        {         
+        public async Task<Fornecedor> CadastraFornecedor(Fornecedor fornecedor)
+        {
             try
-            {
+            {                
                 _context.Fornecedor.Add(fornecedor);
                 await _context.SaveChangesAsync();
-                return true;
+
+                return fornecedor;
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 throw;
             }
         }
@@ -82,26 +90,37 @@ namespace SIGEPRO.Services
         {
             try
             {
-                var fornecedor = await _context.Fornecedor.FindAsync(id);
-                if (fornecedor == null)
+                if (!FornecedorEstaSendoUsado(id))
                 {
-                    return false;
+                    var fornecedor = await _context.Fornecedor.FindAsync(id);
+
+                    if (fornecedor == null)
+                    {
+                        return false;
+                    }
+
+                    _context.Fornecedor.Remove(fornecedor);
+                    await _context.SaveChangesAsync();
+
+                    return true;
                 }
-
-                _context.Fornecedor.Remove(fornecedor);
-                await _context.SaveChangesAsync();
-
-                return true;
+                else
+                    return false;
+               
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 throw;
-            }            
+            }
         }
 
+        private bool FornecedorEstaSendoUsado(int id)
+        {
+            return (_context.Produto?.Any(e => e.CodigoFornecedor == id)).GetValueOrDefault();
+        }
 
-
-        private bool FornecedorExists(int id)
+        private bool FornecedorExiste(int id)
         {
             return (_context.Fornecedor?.Any(e => e.CodigoFornecedor == id)).GetValueOrDefault();
         }

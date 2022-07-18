@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -35,12 +36,24 @@ namespace SIGEPRO.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Fornecedor>>> RecuperaFornecedores()
         {
-            var result = await _fornecedor.RecuperaFornecedores();  
-            
-            if(result == null || !result.Any())
-                          return NotFound();
+            var result = await _fornecedor.RecuperaFornecedores();              
+           
+            if (result == null || !result.Any())
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new Resultado()
+                {
+                    Codigo = "ERRO",
+                    Mensagem = "Nenhum Fornecedor foi encontrado."
+                });
+            }
 
-            return Ok(result);
+            return StatusCode(StatusCodes.Status200OK, new ResultadoListaFornecedores()
+            {
+                Codigo = "OK",
+                Mensagem = $"Solicitação realizada com sucesso, segue lista de Fornecedores",
+                Fornecedor = result
+            });
+
         }
 
         /// <summary>
@@ -52,7 +65,7 @@ namespace SIGEPRO.Controllers
         /// <response code="400">Dados de entrada incorretos.</response>
         /// <response code="404">Dados não encontrados.</response>
         /// <response code="500">Serviço indisponível.</response>
-        [HttpGet("{id}")]
+        [HttpGet("RecuperaFornecedorPorId")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -62,15 +75,27 @@ namespace SIGEPRO.Controllers
             var result = await _fornecedor.RecuperaFornecedorPorId(idFornecedor);
 
             if (result == null)
-                return NotFound();
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new Resultado()
+                {
+                    Codigo = "ERRO",
+                    Mensagem = "O Fornecedor não foi encontrado."
+                });
+            }
 
-            return Ok(result);
+            return StatusCode(StatusCodes.Status200OK, new ResultadoFornecedor()
+            {
+                Codigo = "OK",
+                Mensagem = $"Solicitação realizada com sucesso",
+                Fornecedor = result
+            });
         }
 
         /// <summary>
         /// Cadastra um novo Fornecedor
         /// </summary>        
-        /// <param name="fornecedor"></param>
+        /// <param name="descricao"></param>
+        /// <param name="cnpj"></param>
         /// <returns></returns>
         /// <response code="200">Dados cadastrados.</response>
         /// <response code="400">Dados de entrada incorretos.</response>        
@@ -79,39 +104,68 @@ namespace SIGEPRO.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<Fornecedor>> CadastraFornecedor([FromForm] Fornecedor fornecedor)
-        {            
+        public async Task<ActionResult<Fornecedor>> CadastraFornecedor(
+            [Required] string descricao,
+            [Required] string cnpj)
+        {
+            var fornecedor = new Fornecedor
+            {
+                DescricaoFornecedor = descricao,
+                CnpjFornecedor = cnpj
+            };
+
             var result = await _fornecedor.CadastraFornecedor(fornecedor);
 
-            if (!result)
-                return BadRequest();
+            if (result == null)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new Resultado()
+                {
+                    Codigo = "ERRO",
+                    Mensagem = "Não foi possível cadastrar o fornecedor, verifique os dados digitados."
+                });
+            }
 
-            return CreatedAtAction("RecuperaFornecedorPorId", new { id = fornecedor.CodigoFornecedor}, fornecedor);
+            return StatusCode(StatusCodes.Status200OK, new ResultadoFornecedor()
+            {
+                Codigo = "OK",
+                Mensagem = $"Fornecedor de código {fornecedor.CodigoFornecedor} foi cadastrado com sucesso",
+                Fornecedor = result
+            });
+            
         }
 
         /// <summary>
         /// Atualiza as informações do Fornecedor
-        /// </summary>
-        /// <param name="id"></param>
+        /// </summary>       
         /// <param name="fornecedor"></param>
         /// <returns></returns>
         /// <response code="200">Dados Atualizados.</response>
         /// <response code="400">Dados de entrada incorretos.</response>
         /// <response code="404">Dados não encontrados.</response>
         /// <response code="500">Serviço indisponível.</response>
-        [HttpPut("AlteraFornecedor/{id}")]
+        [HttpPut("AlteraFornecedor")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AlteraFornecedor(int id, [FromForm] Fornecedor fornecedor)
+        public async Task<IActionResult> AlteraFornecedor([FromForm] Fornecedor fornecedor)
         {
-            var result = await _fornecedor.AlteraFornecedor(id, fornecedor);
+            var result = await _fornecedor.AlteraFornecedor(fornecedor);
 
             if (!result)
-                return BadRequest();
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new Resultado()
+                {
+                    Codigo = "ERRO",
+                    Mensagem = "Não foi possível atualizar o fornecedor, verifique os dados digitados."
+                });
+            }                
 
-            return NoContent();
+            return StatusCode(StatusCodes.Status200OK, new Resultado()
+            {
+                Codigo = "OK",
+                Mensagem = $"Fornecedor de código {fornecedor.CodigoFornecedor} foi alterado com sucesso"
+            });
         }
                
 
@@ -119,25 +173,32 @@ namespace SIGEPRO.Controllers
         /// Deleta o Fornecedor da base de dados
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="fornecedor"></param>
         /// <returns></returns>
         /// <response code="200">Dados excluídos.</response>
         /// <response code="400">Dados de entrada incorretos.</response>
-        /// <response code="404">Dados não encontrados.</response>
         /// <response code="500">Serviço indisponível.</response>       
         [HttpDelete("DeletaFornecedor/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeletaFornecedor(int id, [FromForm] Fornecedor fornecedor)
+        public async Task<IActionResult> DeletaFornecedor(int id)
         {
             var result = await _fornecedor.DeletaFornecedor(id);
 
             if (!result)
-                return BadRequest();
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new Resultado()
+                {
+                    Codigo = "ERRO",
+                    Mensagem = "Não foi possível deletar o fornecedor, verifique os dados digitados."
+                });
+            }
 
-            return NoContent();
+            return StatusCode(StatusCodes.Status200OK, new Resultado()
+            {
+                Codigo = "OK",
+                Mensagem = $"Fornecedor de código {id} foi deletado com sucesso"
+            });
         }
     }
 }
