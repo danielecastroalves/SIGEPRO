@@ -15,8 +15,15 @@ namespace SIGEPRO.Context
             Database.EnsureCreated();
         }
 
-        public DbSet<Produto> Produto { get; set; }
-        public DbSet<Fornecedor> Fornecedor { get; set; }
+        public ApiContext()
+        {
+
+        }
+
+        public virtual DbSet<Produto> Produto { get; set; }
+
+        public virtual DbSet<Fornecedor> Fornecedor { get; set; }
+                
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +31,5 @@ namespace SIGEPRO.Context
                 .FornecedorMap()
                 .ProdutoMap();
         }
-
     }
 }

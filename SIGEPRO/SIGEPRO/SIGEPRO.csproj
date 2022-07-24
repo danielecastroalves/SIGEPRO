@@ -5,7 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <StartupObject>SIGEPRO.Program</StartupObject>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,5 +22,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.2" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.3.2" />
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>

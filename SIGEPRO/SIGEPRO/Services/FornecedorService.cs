@@ -25,6 +25,11 @@ namespace SIGEPRO.Services
             _logger = logger;
         }
 
+        public FornecedorService(ApiContext context)
+        {
+            _context = context;
+        }
+
         public async Task<List<Fornecedor>> RecuperaFornecedores()
         {
             try
